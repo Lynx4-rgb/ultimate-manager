@@ -2264,6 +2264,19 @@ async function cloudLink(u,pw){
 // new players get sync straight away
 async function cloudNewUser(u,pw){storeCloud(u,{key:await cloudKey(u.name,pw)});}
 function cloudWhy(r){return r.why==='wrongLocal'?'That is not the password for this player.':r.why==='nosave'?'No cloud save found for that name and password. Check both, and that cloud sync is turned on on your other device.':r.why==='net'?'Could not reach the cloud. Check your connection and try again.':/um_get|um_put|function|schema cache|PGRST202/i.test(r.detail||'')?'The cloud database is not set up yet: run the setup SQL in Supabase (SQL Editor) and try again.':'The cloud said no ('+(r.detail||'unknown error').slice(0,140)+').';}
+// ---------- full screen in the browser (for a home-screen shortcut) ----------
+// Chrome only allows full screen from a tap, so the first tap in the game hides the address bar and the
+// phone's status bar, and locks the screen sideways. If you swipe out of it, the next tap brings it back.
+(function(){
+ const isPhone=/Android|iPhone|iPad|Mobi/i.test(navigator.userAgent);
+ const inst0=matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches&&!document.fullscreenElement;const installed=()=>inst0;
+ const on=()=>{try{return localStorage.getItem('um-fs')!=='0';}catch(e){return true;}};
+ const go=()=>{if(!isPhone||!on()||installed()||document.fullscreenElement||!document.fullscreenEnabled)return;
+  const el=document.documentElement;const p=el.requestFullscreen?el.requestFullscreen({navigationUI:'hide'}):null;
+  if(p&&p.then)p.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{});}catch(e){}}).catch(()=>{});};
+ addEventListener('pointerup',go,{passive:true});
+ window.umFullscreenAvailable=()=>isPhone&&!installed()&&document.fullscreenEnabled;
+})();
 // ===== GAME STATE & UI =====
 const LEGACY_KEY='floodlight-fm-v2';
 let USER=null; // the signed-in player profile on this device
@@ -2427,6 +2440,7 @@ function sideOf(t,other,isAway){
 // game plans run from most passive (left) to most aggressive (right); the arrows wrap round
 function tacCycler(k,id){const ks=Object.keys(TACTICS);const i=Math.max(0,ks.indexOf(k));return `<div class="taccyc" data-cyc="${id}"><button class="btn sm cycbtn" data-dir="-1" aria-label="More passive">◀</button><span class="cycname"><b>${TACTICS[ks[i]].name}</b><small>${i+1} / ${ks.length}</small></span><button class="btn sm cycbtn" data-dir="1" aria-label="More aggressive">▶</button></div>`;}
 function wireCycler(root,id,set){const box=root.querySelector(`[data-cyc="${id}"]`);if(!box)return;box.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{const ks=Object.keys(TACTICS);const cur=ks.indexOf(myTeam().tactic);const n=ks[((cur<0?3:cur)+(+b.dataset.dir)+ks.length)%ks.length];set(n);const nm=box.querySelector('.cycname');if(nm&&box.isConnected){const i=ks.indexOf(n);nm.innerHTML=`<b>${TACTICS[n].name}</b><small>${i+1} / ${ks.length}</small>`;}});}
+function fsPanel(){if(!(window.umFullscreenAvailable&&umFullscreenAvailable()))return '';let on=true;try{on=localStorage.getItem('um-fs')!=='0';}catch(e){}return `<div class="cloudrow"><span class="eyebrow">Full screen</span><label class="chk"><input type="checkbox" id="fsopt" ${on?'checked':''}> Hide the address bar and notifications while playing (first tap goes full screen)</label></div>`;}
 function cloudPanel(){return `<div class="cloudrow"><span class="eyebrow">Cloud sync</span>${USER.cloud?`<p class="note" style="margin:0"><span id="cloudstat">${cloudStatusText()}</span>. On another device, choose "Sign in with an account from another device" and use the same name and password.</p><button class="btn sm" id="csync">Sync now</button>`:`<p class="note" style="margin:0">Save your career to the cloud so you can play it on your phone and laptop. Type the password you chose for this player.</p><form id="clinkf" class="bdgrow"><input type="password" id="clpw" placeholder="This player's password" aria-label="This player's password"><button class="btn sm primary" type="submit">Turn on cloud sync</button></form>`}</div>`;}
 function wireCloudPanel(el){const cs=el.querySelector('#csync');if(cs)cs.onclick=async()=>{cs.textContent='Syncing…';await cloudPush(true);toast(CL.state==='ok'?'Synced':cloudWhy({why:'other',detail:CL.err}));renderHub();};
  const f=el.querySelector('#clinkf');if(f)f.onsubmit=async e=>{e.preventDefault();const pw=el.querySelector('#clpw').value;if(!pw)return;f.querySelector('button').textContent='Linking…';const r=await cloudLink(USER,pw);if(!r.ok){toast(cloudWhy(r));renderHub();return;}
@@ -2987,7 +3001,7 @@ function leagueTableHTML(l,tb,compact){
 function tabSettings(el){
  const me=myTeam();
  if(!UI.bd||UI.bdFor!==me.id){const i=BADGE_IDS.indexOf(me.id);UI.bd=Object.assign({shape:i%4,pat:Math.floor(i/4)%8,c1:me.c1,c2:me.c2,star:false},me.badge||{});UI.bdFor=me.id;}
- el.innerHTML=`<div class="grid2">${USER?`<section class="panel ppanel"><span class="eyebrow">Your profile</span><div class="prow">${userPic(USER,84)}<div><b class="pname">${esc(USER.name)}</b><div class="bdgrow" style="margin-top:8px"><label class="btn sm" for="upimg" style="cursor:pointer">${USER.img?'Change profile picture':'Add a profile picture'}</label><input type="file" id="upimg" accept="image/*" hidden>${USER.img?'<button class="btn sm ghost" id="upimgx">Remove picture</button>':''}</div></div></div>${CLOUD_ON?cloudPanel():''}</section>`:''}<section class="panel" style="display:grid;gap:14px;align-content:start"><span class="eyebrow">Your club</span>
+ el.innerHTML=`<div class="grid2">${USER?`<section class="panel ppanel"><span class="eyebrow">Your profile</span><div class="prow">${userPic(USER,84)}<div><b class="pname">${esc(USER.name)}</b><div class="bdgrow" style="margin-top:8px"><label class="btn sm" for="upimg" style="cursor:pointer">${USER.img?'Change profile picture':'Add a profile picture'}</label><input type="file" id="upimg" accept="image/*" hidden>${USER.img?'<button class="btn sm ghost" id="upimgx">Remove picture</button>':''}</div></div></div>${CLOUD_ON?cloudPanel():''}${fsPanel()}</section>`:''}<section class="panel" style="display:grid;gap:14px;align-content:start"><span class="eyebrow">Your club</span>
  <label class="fld"><span>Club name</span><input id="tname" maxlength="28" value="${esc(me.name)}"></label>
  <label class="fld"><span>Short name (3 letters)</span><input id="tshort" maxlength="3" value="${esc(me.short)}"></label>
  <div class="bdgrow"><label class="fld cpick"><span>Kit main colour</span><input type="color" id="kc1" value="${me.c1}"></label><label class="fld cpick"><span>Kit trim colour</span><input type="color" id="kc2" value="${me.c2}"></label></div>
@@ -3008,6 +3022,7 @@ function tabSettings(el){
  for(const [id,k] of [['bc1','c1'],['bc2','c2']]){$('#'+id).oninput=e=>{UI.bd[k]=e.target.value;$('#bprev').innerHTML=badge({...me,badge:UI.bd},96);};$('#'+id).onchange=()=>tabSettings(el);}
  $('#bstar').onchange=e=>{UI.bd.star=e.target.checked;tabSettings(el);};
  if(CLOUD_ON)wireCloudPanel(el);
+ {const fo=el.querySelector('#fsopt');if(fo)fo.onchange=()=>{try{localStorage.setItem('um-fs',fo.checked?'1':'0');}catch(e){}if(!fo.checked&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});};}
  const setPic=img=>{const all=getUsers();const u=all.find(x=>x.id===USER.id);if(!u)return;if(img)u.img=img;else delete u.img;setUsers(all);USER=u;cloudSoon();tabSettings(el);toast(img?'Profile picture saved':'Profile picture removed');};
  const upi=$('#upimg');if(upi)upi.onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=200;const c=cv.getContext('2d');const k=Math.max(200/im.width,200/im.height);const w=im.width*k,h=im.height*k;c.drawImage(im,(200-w)/2,(200-h)/2,w,h);setPic(cv.toDataURL('image/jpeg',0.85));};im.src=rd.result;};rd.readAsDataURL(f);};
  const upx=$('#upimgx');if(upx)upx.onclick=()=>setPic(null);
