@@ -2198,59 +2198,33 @@ function drawVenue(c,key,s){
  drawMarkings(c,s,lineCol,spot);
 }
 function hashStrV(s){let h=2166136261;for(const ch of s){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
-// ---------- cloud accounts and save sync (Supabase) ----------
-// Only switched on in the installed GitHub version. Your name becomes a private login; your password is
-// turned into a cloud key on this device, so the plain password never leaves it. One row per player in
-// public.saves holds the career and profile picture; row-level security means only you can read it.
+// ---------- cloud save sync (Supabase) ----------
+// Only switched on in the installed GitHub version. No email or sign-up: your name and password are turned
+// into a long secret key on this device (the plain password never leaves it). The save is stored under that
+// key in public.cloud_saves; the table itself is locked, and the only way in is two small database functions
+// that need the exact key. Same name + same password on another device = same key = same career.
 const SB_URL=(()=>{try{return localStorage.getItem('um-sb-url')||'https://qhmtfcnzhmvpafkwivgm.supabase.co';}catch(e){return 'https://qhmtfcnzhmvpafkwivgm.supabase.co';}})();
 const SB_KEY='sb_publishable_1hkBDHxqdDeyWlRwkcZCvA_l2Flglxr';
 const CLOUD_ON=(()=>{try{return /github\.io$/.test(location.hostname)||localStorage.getItem('um-cloud-dev')==='1';}catch(e){return false;}})();
 const CL={state:'',last:0,timer:0,busy:false,dirty:false};
-function cloudEmail(name){const n=name.trim().toLowerCase();let h=2166136261;for(const ch of n){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}
- const slug=n.replace(/[^a-z0-9]+/g,'').slice(0,20)||'player';return `${slug}.${(h>>>0).toString(36)}@players.ultimatemanager.app`;}
-async function cloudKey(name,pw){return 'um1-'+(await hashPw(pw,'cloud|'+name.trim().toLowerCase())).slice(0,40);}
-async function sb(path,opts={},token){
- const h={'apikey':SB_KEY,'Content-Type':'application/json',...(opts.headers||{})};if(token)h['Authorization']='Bearer '+token;
- const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),opts.timeout||12000);
- try{const r=await fetch(SB_URL+path,{method:opts.method||'GET',headers:h,body:opts.body?JSON.stringify(opts.body):undefined,signal:ctl.signal});
-  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null;}catch(e){}return {ok:r.ok,status:r.status,j};}
+async function cloudKey(name,pw){const a=await hashPw(pw,'cloud|'+name.trim().toLowerCase());const b=await hashPw(a+'|'+name.trim().toLowerCase(),'um-key-2');return 'um2-'+a+b.slice(0,24);}
+async function rpc(fn,body,timeout){
+ const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),timeout||15000);
+ try{const r=await fetch(`${SB_URL}/rest/v1/rpc/${fn}`,{method:'POST',headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctl.signal});
+  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null;}catch(e){}return {ok:r.ok,status:r.status,j,txt};}
+ catch(e){return {ok:false,status:0,j:null,txt:String(e)};}
  finally{clearTimeout(to);}
 }
-function sessFrom(j){return {uid:j.user&&j.user.id,at:j.access_token,rt:j.refresh_token,exp:Date.now()+((j.expires_in||3600)-60)*1000};}
-// sign in, or create the account if it doesn't exist yet
-async function cloudLogin(name,key,create){
- const email=cloudEmail(name);
- let r=await sb('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password:key}});
- if(r.ok&&r.j&&r.j.access_token)return {ok:true,s:{...sessFrom(r.j),email}};
- if(!create)return {ok:false,why:r.status===400?'wrong':'net'};
- r=await sb('/auth/v1/signup',{method:'POST',body:{email,password:key}});
- if(r.ok&&r.j&&r.j.access_token)return {ok:true,s:{...sessFrom(r.j),email},created:true};
- if(r.ok&&r.j&&!r.j.access_token)return {ok:false,why:'confirm'};
- const msg=JSON.stringify(r.j||{});return {ok:false,why:/already|exists|registered/i.test(msg)?'taken':r.status?'other':'net',detail:msg};
-}
-function storeCloud(u,s,key){const all=getUsers();const x=all.find(q=>q.id===u.id);if(!x)return;x.cloud={...(x.cloud||{}),...s};if(key)x.cloud.key=key;setUsers(all);if(USER&&USER.id===u.id)USER=x;return x;}
-async function cloudToken(u){
- const c=u.cloud;if(!c)return null;
- if(c.pending&&c.key){const r=await cloudLogin(u.name,c.key,true);if(!r.ok)return null;storeCloud(u,{...r.s,pending:false});return r.s.at;}
- if(c.at&&Date.now()<c.exp)return c.at;
- if(c.rt){const r=await sb('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:c.rt}});if(r.ok&&r.j&&r.j.access_token){storeCloud(u,sessFrom(r.j));return r.j.access_token;}}
- if(c.key){const r=await cloudLogin(u.name,c.key,false);if(r.ok){storeCloud(u,r.s);return r.s.at;}}
- return null;
-}
-async function cloudPull(u){
- const tk=await cloudToken(u);if(!tk)return null;const uid=getUsers().find(x=>x.id===u.id).cloud.uid;
- const r=await sb(`/rest/v1/saves?select=data,updated_at&user_id=eq.${uid}`,{},tk);
- if(!r.ok||!Array.isArray(r.j))return null;return r.j[0]||{};
-}
+async function cloudGet(key){const r=await rpc('um_get',{p_key:key});if(!r.ok)return {ok:false,r};const row=Array.isArray(r.j)?r.j[0]:r.j;return {ok:true,row:row||null};}
+async function cloudPut(key,data){const r=await rpc('um_put',{p_key:key,p_data:data},30000);return r.ok?{ok:true}:{ok:false,r};}
+function storeCloud(u,c){const all=getUsers();const x=all.find(q=>q.id===u.id);if(!x)return;x.cloud={...(x.cloud||{}),...c};setUsers(all);if(USER&&USER.id===u.id)USER=x;return x;}
+function cloudPayload(u){return {v:2,ts:(S&&S._ts)||Date.now(),name:u.name,img:u.img||null,save:S};}
 async function cloudPush(force){
- if(!CLOUD_ON||!USER||!USER.cloud||!S)return;if(!force&&USER.cloud.pending&&!navigator.onLine)return;if(CL.busy){CL.dirty=true;return;}
+ if(!CLOUD_ON||!USER||!USER.cloud||!S)return;if(CL.busy){CL.dirty=true;return;}
  if(!navigator.onLine){CL.state='offline';CL.dirty=true;cloudBadge();return;}
  CL.busy=true;CL.dirty=false;CL.state='syncing';cloudBadge();
- try{const tk=await cloudToken(USER);if(!tk)throw new Error('auth');const u=getUsers().find(x=>x.id===USER.id);
-  const r=await sb('/rest/v1/saves?on_conflict=user_id',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},timeout:30000,
-   body:{user_id:u.cloud.uid,data:{v:1,ts:S._ts||Date.now(),name:u.name,img:u.img||null,save:S},updated_at:new Date().toISOString()}},tk);
-  if(!r.ok)throw new Error('push '+r.status);CL.state='ok';CL.last=Date.now();
- }catch(e){CL.state='error';CL.dirty=true;}
+ const u=getUsers().find(x=>x.id===USER.id)||USER;const r=await cloudPut(u.cloud.key,cloudPayload(u));
+ if(r.ok){CL.state='ok';CL.last=Date.now();}else{CL.state='error';CL.err=r.r&&r.r.txt;CL.dirty=true;}
  CL.busy=false;cloudBadge();if(CL.dirty&&CL.state==='ok')cloudSoon();
 }
 function cloudSoon(){if(!CLOUD_ON||!USER||!USER.cloud)return;clearTimeout(CL.timer);CL.timer=setTimeout(()=>cloudPush(),4000);}
@@ -2261,32 +2235,35 @@ addEventListener('online',()=>{if(CL.dirty)cloudPush();});
 // on entering a profile: if the cloud copy is newer (played on another device), use it
 async function cloudEnter(u){
  if(!CLOUD_ON||!u.cloud||!navigator.onLine)return;
- try{const row=await cloudPull(u);if(!row||!row.data)return;const d=row.data;
-  let local=null;try{local=JSON.parse(localStorage.getItem('um-save::'+u.id)||'null');}catch(e){}
-  const all=getUsers();const x=all.find(q=>q.id===u.id);if(x&&d.img!==undefined&&d.img!==x.img){if(d.img)x.img=d.img;else delete x.img;setUsers(all);}
-  if(d.save&&(!local||(d.ts||0)>(local._ts||0))){localStorage.setItem('um-save::'+u.id,JSON.stringify(d.save));CL.pulled=true;}
-  CL.state='ok';CL.last=Date.now();
- }catch(e){}
+ const g=await cloudGet(u.cloud.key);if(!g.ok||!g.row||!g.row.data)return;const d=g.row.data;
+ let local=null;try{local=JSON.parse(localStorage.getItem('um-save::'+u.id)||'null');}catch(e){}
+ const all=getUsers();const x=all.find(q=>q.id===u.id);if(x&&d.img!==undefined&&d.img!==(x.img||null)){if(d.img)x.img=d.img;else delete x.img;setUsers(all);}
+ if(d.save&&(!local||(d.ts||0)>(local._ts||0))){localStorage.setItem('um-save::'+u.id,JSON.stringify(d.save));CL.pulled=true;}
+ CL.state='ok';CL.last=Date.now();
 }
-// sign in on a new device with an account made elsewhere
+// sign in on a new device with a career saved from another one
 async function cloudSignInNew(name,pw){
- const key=await cloudKey(name,pw);const r=await cloudLogin(name,key,false);if(!r.ok)return r;
- const salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
- const u={id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:name.trim(),salt,hash:await hashPw(pw,salt),av:makeAvatar(),created:Date.now(),cloud:{...r.s,key}};
- const all=getUsers();all.push(u);setUsers(all);
- const row=await cloudPull(u);if(row&&row.data){const d=row.data;if(d.save)localStorage.setItem('um-save::'+u.id,JSON.stringify(d.save));{const a=getUsers();const x=a.find(q=>q.id===u.id);if(d.img)x.img=d.img;if(d.name)x.name=d.name;setUsers(a);}}
- return {ok:true,u:getUsers().find(x=>x.id===u.id)};
+ const key=await cloudKey(name,pw);const g=await cloudGet(key);
+ if(!g.ok)return {ok:false,why:g.r.status?'other':'net',detail:g.r.txt};
+ if(!g.row||!g.row.data)return {ok:false,why:'nosave'};
+ const d=g.row.data;const salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
+ const u={id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name:d.name||name.trim(),salt,hash:await hashPw(pw,salt),av:makeAvatar(),created:Date.now(),cloud:{key}};
+ if(d.img)u.img=d.img;const all=getUsers();all.push(u);setUsers(all);
+ if(d.save)localStorage.setItem('um-save::'+u.id,JSON.stringify(d.save));
+ return {ok:true,u};
 }
-// link a profile that was made before cloud sync existed (needs its password once)
+// switch on sync for a profile (needs its password once)
 async function cloudLink(u,pw){
- if(await hashPw(pw,u.salt)!==u.hash)return {ok:false,why:'wrong'};
- const key=await cloudKey(u.name,pw);const r=await cloudLogin(u.name,key,true);if(!r.ok)return r;
- storeCloud(u,r.s,key);
- // an account that already had a save (made on another device): keep whichever is newer
- const row=await cloudPull(USER);if(row&&row.data&&row.data.save&&(row.data.ts||0)>((S&&S._ts)||0)){localStorage.setItem('um-save::'+u.id,JSON.stringify(row.data.save));return {ok:true,reload:true};}
- await cloudPush(true);return {ok:true};
+ if(await hashPw(pw,u.salt)!==u.hash)return {ok:false,why:'wrongLocal'};
+ const key=await cloudKey(u.name,pw);const g=await cloudGet(key);
+ if(!g.ok)return {ok:false,why:g.r.status?'other':'net',detail:g.r.txt};
+ storeCloud(u,{key});
+ if(g.row&&g.row.data&&g.row.data.save&&(g.row.data.ts||0)>((S&&S._ts)||0)){localStorage.setItem('um-save::'+u.id,JSON.stringify(g.row.data.save));return {ok:true,reload:true};}
+ await cloudPush(true);if(CL.state!=='ok')return {ok:false,why:'other',detail:CL.err};return {ok:true};
 }
-function cloudWhy(r){return r.why==='wrong'?'That name and password do not match a cloud account.':r.why==='taken'?'That name is already used by another cloud account. Your game stays on this device.':r.why==='confirm'?'Turn off "Confirm email" in Supabase (Authentication, Sign In / Providers, Email) and try again.':r.why==='net'?'Could not reach the cloud. Check your connection and try again.':'The cloud said no ('+(r.detail||'unknown error').slice(0,120)+').';}
+// new players get sync straight away
+async function cloudNewUser(u,pw){storeCloud(u,{key:await cloudKey(u.name,pw)});}
+function cloudWhy(r){return r.why==='wrongLocal'?'That is not the password for this player.':r.why==='nosave'?'No cloud save found for that name and password. Check both, and that cloud sync is turned on on your other device.':r.why==='net'?'Could not reach the cloud. Check your connection and try again.':/um_get|um_put|function|schema cache|PGRST202/i.test(r.detail||'')?'The cloud database is not set up yet: run the setup SQL in Supabase (SQL Editor) and try again.':'The cloud said no ('+(r.detail||'unknown error').slice(0,140)+').';}
 // ===== GAME STATE & UI =====
 const LEGACY_KEY='floodlight-fm-v2';
 let USER=null; // the signed-in player profile on this device
@@ -2450,10 +2427,10 @@ function sideOf(t,other,isAway){
 // game plans run from most passive (left) to most aggressive (right); the arrows wrap round
 function tacCycler(k,id){const ks=Object.keys(TACTICS);const i=Math.max(0,ks.indexOf(k));return `<div class="taccyc" data-cyc="${id}"><button class="btn sm cycbtn" data-dir="-1" aria-label="More passive">◀</button><span class="cycname"><b>${TACTICS[ks[i]].name}</b><small>${i+1} / ${ks.length}</small></span><button class="btn sm cycbtn" data-dir="1" aria-label="More aggressive">▶</button></div>`;}
 function wireCycler(root,id,set){const box=root.querySelector(`[data-cyc="${id}"]`);if(!box)return;box.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{const ks=Object.keys(TACTICS);const cur=ks.indexOf(myTeam().tactic);const n=ks[((cur<0?3:cur)+(+b.dataset.dir)+ks.length)%ks.length];set(n);const nm=box.querySelector('.cycname');if(nm&&box.isConnected){const i=ks.indexOf(n);nm.innerHTML=`<b>${TACTICS[n].name}</b><small>${i+1} / ${ks.length}</small>`;}});}
-function cloudPanel(){return `<div class="cloudrow"><span class="eyebrow">Cloud sync</span>${USER.cloud&&!USER.cloud.pending?`<p class="note" style="margin:0"><span id="cloudstat">${cloudStatusText()}</span>. Sign in on another device with your name and password to carry on there.</p><button class="btn sm" id="csync">Sync now</button>`:USER.cloud&&USER.cloud.pending?`<p class="note" style="margin:0">Your cloud account will be set up next time you are online.</p><button class="btn sm" id="csync">Try now</button>`:`<p class="note" style="margin:0">Save your career to the cloud so you can play it on your phone and laptop.</p><form id="clinkf" class="bdgrow"><input type="password" id="clpw" placeholder="Your password" aria-label="Your password"><button class="btn sm primary" type="submit">Turn on cloud sync</button></form>`}</div>`;}
-function wireCloudPanel(el){const cs=el.querySelector('#csync');if(cs)cs.onclick=async()=>{if(USER.cloud&&USER.cloud.pending){const r=await cloudLogin(USER.name,USER.cloud.key,true);if(r.ok){const u=storeCloud(USER,{...r.s,pending:false});}else{toast(cloudWhy(r));return;}}await cloudPush(true);toast(CL.state==='ok'?'Synced':cloudStatusText());renderHub();};
+function cloudPanel(){return `<div class="cloudrow"><span class="eyebrow">Cloud sync</span>${USER.cloud?`<p class="note" style="margin:0"><span id="cloudstat">${cloudStatusText()}</span>. On another device, choose "Sign in with an account from another device" and use the same name and password.</p><button class="btn sm" id="csync">Sync now</button>`:`<p class="note" style="margin:0">Save your career to the cloud so you can play it on your phone and laptop. Type the password you chose for this player.</p><form id="clinkf" class="bdgrow"><input type="password" id="clpw" placeholder="This player's password" aria-label="This player's password"><button class="btn sm primary" type="submit">Turn on cloud sync</button></form>`}</div>`;}
+function wireCloudPanel(el){const cs=el.querySelector('#csync');if(cs)cs.onclick=async()=>{cs.textContent='Syncing…';await cloudPush(true);toast(CL.state==='ok'?'Synced':cloudWhy({why:'other',detail:CL.err}));renderHub();};
  const f=el.querySelector('#clinkf');if(f)f.onsubmit=async e=>{e.preventDefault();const pw=el.querySelector('#clpw').value;if(!pw)return;f.querySelector('button').textContent='Linking…';const r=await cloudLink(USER,pw);if(!r.ok){toast(cloudWhy(r));renderHub();return;}
-  if(r.reload){toast('Found a newer game in the cloud - loading it');const u=USER;S=null;startSession();return;}toast('Cloud sync is on');renderHub();};}
+  if(r.reload){toast('Found a newer game in the cloud - loading it');S=null;startSession();return;}toast('Cloud sync is on');renderHub();};}
 function tacKey(){const t=myTeam();return t.formation+'|'+t.tactic;}
 function tacRun(){const h=S.tac||{};return h.key===tacKey()?h.n:0;}
 function tacEdge(){const n=tacRun();if(n===0)return 1.02;if(n<=8)return 1+Math.min(0.012,n*0.002);return 1-Math.min(0.07,(n-8)*0.008);}
@@ -3888,10 +3865,7 @@ function renderLogin(msg){
    const u={id:'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,salt,hash:await hashPw(p1,salt),av:makeAvatar(),created:Date.now()};
    if(!all.length){try{const old=localStorage.getItem(LEGACY_KEY);if(old){localStorage.setItem('um-save::'+u.id,old);localStorage.removeItem(LEGACY_KEY);}}catch(e){}}
    all.push(u);setUsers(all);L.mode='pick';L.fresh=u.id;
-   if(typeof CLOUD_ON!=='undefined'&&CLOUD_ON){const key=await cloudKey(name,p1);let note='';
-    if(navigator.onLine){app.querySelector('#unf button[type=submit]').textContent='Setting up your cloud account…';const r=await cloudLogin(name,key,true);if(r.ok)storeCloud(u,r.s,key);else if(r.why==='net')storeCloud(u,{pending:true},key);else note=cloudWhy(r);}
-    else storeCloud(u,{pending:true},key);
-    return renderLogin(note||undefined);}
+   if(typeof CLOUD_ON!=='undefined'&&CLOUD_ON)await cloudNewUser(u,p1);
    renderLogin();};
   return;
  }
