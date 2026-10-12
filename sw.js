@@ -1,6 +1,6 @@
 // Offline support: the game itself is stored on first visit, fonts are stored the first time they load.
 // Change VERSION whenever you upload a new index.html so phones pick up the update.
-const VERSION = 'ultimate-manager-v18';
+const VERSION = 'ultimate-manager-v19';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
@@ -15,6 +15,11 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   // cloud sync always goes straight to Supabase, never the offline store
   if (url.hostname.endsWith('supabase.co')) return;
+  // the app description must always be fresh so the phone sees the current app identity
+  if (url.origin === location.origin && url.pathname.endsWith('.webmanifest')) {
+    e.respondWith(fetch(req, {cache: 'no-store'}).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return r; }).catch(() => caches.match(req)));
+    return;
+  }
   // the page: try the network first so updates arrive, fall back to the stored copy when offline
   if (req.mode === 'navigate') {
     e.respondWith(fetch(req).then(r => { const copy = r.clone(); caches.open(VERSION).then(c => c.put('./index.html', copy)); return r; })
