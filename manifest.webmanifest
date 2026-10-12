@@ -1,0 +1,16 @@
+{
+  "name": "Ultimate Manager",
+  "short_name": "Ultimate Manager",
+  "description": "Take a Non-League club all the way to the Premier League and beyond.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#111415",
+  "theme_color": "#111415",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
