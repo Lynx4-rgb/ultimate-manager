@@ -13,6 +13,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <title>Ultimate Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -803,6 +805,12 @@ html,body{margin:0}
 .setgrid input[type=color]::-moz-color-swatch{border:0;border-radius:4px}
 .setrow2 .bdgcols .btn{white-space:nowrap}
 @media (orientation:landscape) and (max-height:500px){.setrow2 .bdgcols{grid-template-columns:108px}}
+.tcard h3 .tage{font-size:.55em;font-weight:600;opacity:.6;margin-left:.45em;letter-spacing:0;vertical-align:.12em}
+.tcard .tstats.t3{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.tcard:has(.t3){width:min(440px,100%)}
+.tcard .t3 .ts{gap:4px;min-width:0}.tcard .t3 .ts span{font-size:10px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tcard .t3 .ts b{font-size:17px;white-space:nowrap}
+.tcard .tvalue{display:flex;justify-content:center;align-items:baseline;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,.1);text-align:center}
+.tcard .tvalue span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.65}.tcard .tvalue b{font-size:18px}
 </style>
 </head>
 <body>
@@ -3878,12 +3886,12 @@ function tabSquad(el){
  <p class="note" style="margin:6px 0 0">Tap a tile for the player card. Drag one tile onto another, or use Swap on the card, to change the line-up.</p></section>`;
  $('#form').onchange=e=>{me.formation=e.target.value;me.xi=autoPick(me.squad,me.formation);save();renderHub();};
  wireCycler(el,'sq',k=>{me.tactic=k;save();renderHub();});
- $('#auto').onclick=()=>{me.xi=autoPick(me.squad,me.formation);UI.swap=null;save();renderHub();toast('Best XI selected');};
- $('#autofit').onclick=()=>{me.xi=healthPick(me.squad,me.formation);UI.swap=null;save();renderHub();toast('Freshest XI selected');};
+ $('#auto').onclick=()=>{me.xi=autoPick(me.squad,me.formation);UI.swap=null;save();renderHub();;};
+ $('#autofit').onclick=()=>{me.xi=healthPick(me.squad,me.formation);UI.swap=null;save();renderHub();;};
  if(UI.swap)$('#cancelswap').onclick=()=>{UI.swap=null;renderHub();};
  el.querySelectorAll('.ptile').forEach(b=>{
   b.onclick=e=>{if(UI.tdDone){UI.tdDone=false;return;}const pid=+b.dataset.pid;
-   if(e.target.closest('.cstar')){e.stopPropagation();const me=myTeam();me.captain=me.captain===pid?null:pid;save();renderHub();const q=playerById(pid);toast(me.captain===pid?`${q.name} is your new captain`:'Captain removed');return;}if(UI.swap&&UI.swap!==pid){doSwap(UI.swap,pid);UI.swap=null;save();renderHub();return;}if(UI.swap===pid){UI.swap=null;renderHub();return;}openCard(pid,b);};
+   if(e.target.closest('.cstar')){e.stopPropagation();const me=myTeam();me.captain=me.captain===pid?null:pid;save();renderHub();const q=playerById(pid);;return;}if(UI.swap&&UI.swap!==pid){doSwap(UI.swap,pid);UI.swap=null;save();renderHub();return;}if(UI.swap===pid){UI.swap=null;renderHub();return;}openCard(pid,b);};
   b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'||e.target.closest('.cstar'))return;UI.td={pid:+b.dataset.pid,x:e.clientX,y:e.clientY,el:b,moved:false,id:e.pointerId};});
   b.ondragstart=e=>{e.dataTransfer.setData('text/plain',b.dataset.pid);b.classList.add('dragging');};
   b.ondragend=()=>b.classList.remove('dragging');
@@ -3908,7 +3916,7 @@ function doSwap(a,b){
  else if(ia>=0){me.xi[ia]=b;}
  else if(ib>=0){me.xi[ib]=a;}
  else return toast('Both players are on the bench.');
- const pa=playerById(a),pb=playerById(b);if(pa&&pb)toast(`${surname(pa.name)} ⇄ ${surname(pb.name)}`);
+ const pa=playerById(a),pb=playerById(b);if(pa&&pb);
 }
 
 // ---------- player card (top-trump style) ----------
@@ -3923,9 +3931,9 @@ function openCard(pid,fromEl){
  const cap=isCaptain(p);const statC=(lbl,k)=>{const v=p[k];const tt=tier(v);return `<div class="ts"><span>${lbl}</span><b><i style="background:${tt.bg}"></i>${v}${cap?'<em class="capplus">+5</em>':''}</b></div>`;};
  layer.innerHTML=`<div class="tcard ${p.ovr>=75?'gold':''}" role="dialog" aria-modal="true" aria-label="${esc(p.name)} player card">
   <div class="tchead" style="background:${club?club.c1:'#3b4a4d'};color:${club?ink(club.c1):'#fff'}">
-   <div><span class="tclub">${club?esc(club.name):'Free agent'}</span><h3>${esc(p.name)}${cap?' <span class="capbadge" title="Captain: +5 to every attribute">C</span>':''}</h3><span class="tpos">${POS_NAME[p.pos]}${p.num?' · #'+p.num:''} · fitness ${Math.round(p.fit??100)}%${(p.vmod||1)>1.04?' · value rising':(p.vmod||1)<0.96?' · value falling':''}</span>${retireNote(p,true)}</div>
+   <div><span class="tclub">${club?esc(club.name):'Free agent'}</span><h3>${esc(p.name)}<span class="tage">${p.age}</span>${cap?' <span class="capbadge" title="Captain: +5 to every attribute">C</span>':''}</h3><span class="tpos">${POS_NAME[p.pos]}${p.num?' · #'+p.num:''} · fitness ${Math.round(p.fit??100)}%${(p.vmod||1)>1.04?' · value rising':(p.vmod||1)<0.96?' · value falling':''}</span>${retireNote(p,true)}</div>
    <span class="tbig ${p.ovr>=75?'gold':''} ${cap?'cap':''}" style="background:${t.bg};color:${t.fg}">${cap?p.ovr+5:p.ovr}</span></div>
-  <div class="tstats">${statC('Speed','spd')}${stat('Age',p.age)}${statC('Shooting','sho')}${statC('Passing','pas')}${statC('Dribbling','dri')}${statC('Tackling','tck')}${statC('Strength','str')}${statC('Goalkeeping','gk')}${statC('Stamina','sta')}${stat('Form',p.form&&p.form.length?(p.form.reduce((a,b)=>a+b,0)/p.form.length).toFixed(1):'–')}${stat('Goals',p.goals||0)}${stat('Value',fmt(p.value))}</div>
+  <div class="tstats t3">${statC('Speed','spd')}${statC('Shooting','sho')}${statC('Passing','pas')}${statC('Dribbling','dri')}${statC('Tackling','tck')}${statC('Strength','str')}${statC('Goalkeeping','gk')}${statC('Stamina','sta')}${stat('Form',p.form&&p.form.length?(p.form.reduce((a,b)=>a+b,0)/p.form.length).toFixed(1):'–')}</div><div class="tvalue"><span>Value</span><b>${fmt(p.value)}</b></div>
   ${traitTag(p,true)}
   ${linkHTML(p)}
   <div class="tact">${mine?`<button class="btn primary sm" data-act="swap">Swap</button><button class="btn sm" data-act="sell">Sell for ${fmt(sellFee(p))}</button>`:`<button class="btn primary sm" data-act="buy" ${price>myTeam().budget?'disabled':''}>Sign for ${fmt(price)}</button>`}<button class="btn ghost sm" data-act="close">Close</button></div>
@@ -4271,7 +4279,7 @@ function subsHTML(){
 function wireSubs(box){
  const L=LIVE,m=L.m;
  box.querySelectorAll('[data-out]').forEach(b=>b.onclick=()=>{UI.subOut=+b.dataset.out;box.innerHTML=subsHTML();wireSubs(box);});
- box.querySelectorAll('[data-in]').forEach(b=>b.onclick=()=>{const np=(m.teams[L.mine].side.bench||[]).find(p=>p.id===+b.dataset.in);if(UI.subOut!=null&&np&&subPlayer(m,L.mine,UI.subOut,np)){toast(`${np.name} comes on`);}UI.subOut=null;box.innerHTML=subsHTML();wireSubs(box);$('#subsbtn').textContent=`Subs ${(m.subs||[0,0])[L.mine]}/${MAXSUB}`;L.evN=-1;});
+ box.querySelectorAll('[data-in]').forEach(b=>b.onclick=()=>{const np=(m.teams[L.mine].side.bench||[]).find(p=>p.id===+b.dataset.in);if(UI.subOut!=null&&np&&subPlayer(m,L.mine,UI.subOut,np)){}UI.subOut=null;box.innerHTML=subsHTML();wireSubs(box);$('#subsbtn').textContent=`Subs ${(m.subs||[0,0])[L.mine]}/${MAXSUB}`;L.evN=-1;});
 }
 function openBoosters(){
  const L=LIVE;if(!L||L.done)return;document.querySelectorAll('.subover').forEach(x=>x.remove());L.paused=true;$('#pause').textContent='Resume';
@@ -4313,7 +4321,7 @@ function subTip(L,m){
  <div class="stbtn"><button class="btn sm primary" data-st="y" aria-label="Make this substitution">✓</button><button class="btn sm ghost" data-st="n" aria-label="Dismiss">✕</button></div>`;
  $('#pw').appendChild(d);requestAnimationFrame(()=>d.classList.add('in'));
  const close=()=>{d.classList.remove('in');setTimeout(()=>d.remove(),220);};
- d.querySelector('[data-st="y"]').onclick=()=>{const idx=T.players.indexOf(best.pl);if(idx>=0&&T.side.bench.includes(best.c)&&subPlayer(m,L.mine,idx,best.c)){toast(`${best.c.name} comes on`);const sb=$('#subsbtn');if(sb)sb.textContent=`Subs ${(m.subs||[0,0])[L.mine]}/${MAXSUB}`;L.evN=-1;}close();};
+ d.querySelector('[data-st="y"]').onclick=()=>{const idx=T.players.indexOf(best.pl);if(idx>=0&&T.side.bench.includes(best.c)&&subPlayer(m,L.mine,idx,best.c)){const sb=$('#subsbtn');if(sb)sb.textContent=`Subs ${(m.subs||[0,0])[L.mine]}/${MAXSUB}`;L.evN=-1;}close();};
  d.querySelector('[data-st="n"]').onclick=()=>{L.tipNo[best.pl.p.id]=m.t+m.dur*0.15;close();};
  setTimeout(()=>{if(d.isConnected){L.tipNo[best.pl.p.id]=m.t+m.dur*0.08;close();}},9000);
 }
