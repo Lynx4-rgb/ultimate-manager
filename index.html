@@ -12,6 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <title>Ultimate Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -500,7 +501,7 @@ h1,h2{text-shadow:0 1px 0 rgba(0,0,0,.45),0 0 1px rgba(255,235,190,.15)}
  .portal{padding:6px}.pwin{height:100%;border-radius:10px}.pbar{padding:6px 10px}.ptitle{font-size:17px}
  .mfilters{gap:5px;margin-bottom:6px}.mfilters input,.mfilters select{padding:4px 6px;font-size:12px}.pospills button{padding:3px 6px;font-size:11px}
  .mtable td,.mtable th{padding:4px 6px}.rchip.lg{min-width:36px;height:26px;font-size:16px}
- .cardlayer{padding:6px}.tcard{max-height:calc(100vh - 12px);overflow:auto;width:min(520px,100%)}
+ .cardlayer{padding:6px}.tcard{zoom:.68;max-height:calc((100vh - 12px)/.68);overflow:auto;width:min(520px,100%)}
  .tcard .tstats{grid-template-columns:repeat(4,minmax(0,1fr))}.tcard .ts{padding:5px 7px}.tcard .ts span{font-size:9px;letter-spacing:.02em}.tcard .ts b{font-size:16px}
  .pstable td,.pstable th{padding:4px 5px}
 }
@@ -3946,16 +3947,17 @@ function openCard(pid,fromEl){
 }
 
 // ---------- transfer portal ----------
-function openMarket(){
+function openMarket(legend){
+ UI.legendMode=!!legend;
  document.querySelectorAll('.portal').forEach(x=>x.remove());
  const d=document.createElement('div');d.className='portal';
  d.innerHTML=`<div class="pwin" role="dialog" aria-modal="true" aria-label="Transfer market">
- <div class="pbar"><span class="dots"><i></i><i></i><i></i></span><span class="ptitle">Transfer Market</span><span class="plive"><i></i>Live link</span><button class="btn sm ghost" id="pclose" aria-label="Close transfer market">Close ✕</button></div>
+ <div class="pbar"><span class="dots"><i></i><i></i><i></i></span><span class="ptitle">${legend?'Legendary Transfer Market':'Transfer Market'}</span><span class="plive"><i></i>Live link</span><button class="btn sm ghost" id="pclose" aria-label="Close transfer market">Close ✕</button></div>
  <div class="pconnect"><span class="spin"></span>Connecting to the market…</div>
  <div class="pbody" hidden></div></div>`;
  document.body.appendChild(d);document.body.style.overflow='hidden';
  requestAnimationFrame(()=>d.classList.add('in'));
- const close=()=>{d.classList.remove('in');setTimeout(()=>{d.remove();document.body.style.overflow='';renderHub();},220);document.removeEventListener('keydown',kd);};
+ const close=()=>{d.classList.remove('in');UI.legendMode=false;setTimeout(()=>{d.remove();document.body.style.overflow='';renderHub();},220);document.removeEventListener('keydown',kd);};
  const kd=e=>{if(e.key==='Escape'&&!document.querySelector('.cardlayer'))close();};document.addEventListener('keydown',kd);
  $('#pclose').onclick=close;
  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3964,51 +3966,55 @@ function openMarket(){
 function renderMarket(){
  const body=document.querySelector('.portal .pbody');if(!body)return;
  const F=UI.m;const me=myTeam();const T=T_();
- let list=allPlayers().filter(e=>e.club!==S.me);
+ const LG=UI.legendMode&&S.cup&&S.cup.kind==='emperor';const ET=LG?S.cup.euro:[];
+ const priceOf_=e=>LG?0:priceOf(e);
+ let list=LG?ET.flatMap((t,ti)=>t.squad.map(p=>({p,club:-100-ti,et:t}))):allPlayers().filter(e=>e.club!==S.me);
+ if(LG&&!String(F.club).startsWith('-1')&&F.club!=='ALL')F.club='ALL';
  if(F.club!=='ALL')list=list.filter(e=>String(e.club)===F.club);
- if(F.lg!=='ALL')list=list.filter(e=>F.lg==='FA'?e.club<0:e.club>=0&&String(T[e.club].league)===F.lg);
+ if(!LG&&F.lg!=='ALL')list=list.filter(e=>F.lg==='FA'?e.club<0:e.club>=0&&String(T[e.club].league)===F.lg);
  if(!Array.isArray(F.pos))F.pos=[];if(F.pos.length)list=list.filter(e=>F.pos.includes(e.p.pos));
  if(F.q)list=list.filter(e=>e.p.name.toLowerCase().includes(F.q.toLowerCase()));
  if(F.amin)list=list.filter(e=>e.p.age>=+F.amin);if(F.amax)list=list.filter(e=>e.p.age<=+F.amax);
  if(F.omin)list=list.filter(e=>e.p.ovr>=+F.omin);
- if(F.price!=='ANY')list=list.filter(e=>priceOf(e)<=+F.price);
- if(F.afford)list=list.filter(e=>priceOf(e)<=me.budget);
- const key={ovr:e=>e.p.ovr,name:e=>e.p.name,pos:e=>POSITIONS.indexOf(e.p.pos),age:e=>e.p.age,trait:e=>{const k=traitOf(e.p);return k?TRAITS[k].name:'~';},spd:e=>e.p.spd,sho:e=>e.p.sho,pas:e=>e.p.pas,dri:e=>e.p.dri,tck:e=>e.p.tck,str:e=>e.p.str,gk:e=>e.p.gk,sta:e=>e.p.sta,club:e=>e.club<0?'~':T[e.club].name,price:e=>priceOf(e)}[F.sort];
+ if(!LG&&F.price!=='ANY')list=list.filter(e=>priceOf(e)<=+F.price);
+ if(!LG&&F.afford)list=list.filter(e=>priceOf(e)<=me.budget);
+ const key={ovr:e=>e.p.ovr,name:e=>e.p.name,pos:e=>POSITIONS.indexOf(e.p.pos),age:e=>e.p.age,trait:e=>{const k=traitOf(e.p);return k?TRAITS[k].name:'~';},spd:e=>e.p.spd,sho:e=>e.p.sho,pas:e=>e.p.pas,dri:e=>e.p.dri,tck:e=>e.p.tck,str:e=>e.p.str,gk:e=>e.p.gk,sta:e=>e.p.sta,club:e=>e.et?e.et.name:e.club<0?'~':T[e.club].name,price:e=>priceOf_(e)}[F.sort];
  list.sort((a,b)=>{const x=key(a),y=key(b);return (x<y?-1:x>y?1:0)*F.dir||b.p.ovr-a.p.ovr;});
  const total=list.length;const shown=list.slice(0,F.limit);
  const th=(k,l,cls='')=>`<th class="sort ${cls} ${F.sort===k?'on':''}" data-msort="${k}" aria-sort="${F.sort===k?(F.dir<0?'descending':'ascending'):'none'}">${l}${F.sort===k?(F.dir<0?' ▼':' ▲'):''}</th>`;
- const ticker=allPlayers().filter(e=>e.club!==S.me).sort((a,b)=>b.p.ovr-a.p.ovr).slice(0,14).map(e=>`<span>${esc(e.p.name)} <b>${e.p.ovr}</b> ${fmt(priceOf(e))}</span>`).join('');
+ const ticker=(LG?list.slice():allPlayers().filter(e=>e.club!==S.me)).sort((a,b)=>b.p.ovr-a.p.ovr).slice(0,14).map(e=>`<span>${esc(e.p.name)} <b>${e.p.ovr}</b> ${LG?'Free':fmt(priceOf(e))}</span>`).join('');
  body.innerHTML=`<div class="ticker" aria-hidden="true"><div class="tk">${ticker}${ticker}</div></div>
  <div class="mfilters">
   <input id="mq" type="search" placeholder="Search name" value="${esc(F.q)}" aria-label="Search by name">
-  <select id="mclub" aria-label="Club"><option value="ALL">All clubs</option><option value="-1" ${F.club==='-1'?'selected':''}>Free agents</option>${[...Array(NL).keys()].map(l=>`<optgroup label="${LEAGUES[l].name}">${T.map((t,i)=>[t,i]).filter(([t,i])=>t.league===l&&i!==S.me).map(([t,i])=>`<option value="${i}" ${F.club===String(i)?'selected':''}>${esc(t.name)}</option>`).join('')}</optgroup>`).join('')}</select>
-  <select id="mlg" aria-label="League"><option value="ALL">All leagues</option>${[...Array(NL).keys()].map(l=>`<option value="${l}" ${F.lg===String(l)?'selected':''}>${LEAGUES[l].name}</option>`).join('')}<option value="FA" ${F.lg==='FA'?'selected':''}>Free agents</option></select>
-  <select id="mprice" aria-label="Maximum price"><option value="ANY">Any price</option>${[250e3,500e3,1e6,2e6,5e6,10e6,20e6].map(v=>`<option value="${v}" ${F.price===String(v)?'selected':''}>Up to ${fmt(v)}</option>`).join('')}</select>
+  ${LG?`<select id="mclub" aria-label="Team"><option value="ALL">All teams</option>${ET.map((t,ti)=>`<option value="${-100-ti}" ${F.club===String(-100-ti)?'selected':''}>${esc(t.name)}</option>`).join('')}</select>`:`<select id="mclub" aria-label="Club"><option value="ALL">All clubs</option><option value="-1" ${F.club==='-1'?'selected':''}>Free agents</option>${[...Array(NL).keys()].map(l=>`<optgroup label="${LEAGUES[l].name}">${T.map((t,i)=>[t,i]).filter(([t,i])=>t.league===l&&i!==S.me).map(([t,i])=>`<option value="${i}" ${F.club===String(i)?'selected':''}>${esc(t.name)}</option>`).join('')}</optgroup>`).join('')}</select>`}
+  ${LG?'':`<select id="mlg" aria-label="League"><option value="ALL">All leagues</option>${[...Array(NL).keys()].map(l=>`<option value="${l}" ${F.lg===String(l)?'selected':''}>${LEAGUES[l].name}</option>`).join('')}<option value="FA" ${F.lg==='FA'?'selected':''}>Free agents</option></select>
+  <select id="mprice" aria-label="Maximum price"><option value="ANY">Any price</option>${[250e3,500e3,1e6,2e6,5e6,10e6,20e6].map(v=>`<option value="${v}" ${F.price===String(v)?'selected':''}>Up to ${fmt(v)}</option>`).join('')}</select>`}
   <span class="mrange"><label for="mamin">Age</label><input id="mamin" type="number" min="16" max="40" placeholder="min" value="${F.amin}"><input id="mamax" type="number" min="16" max="40" placeholder="max" value="${F.amax}" aria-label="Maximum age"></span>
   <span class="mrange"><label for="momin">Min rating</label><input id="momin" type="number" min="1" max="99" placeholder="any" value="${F.omin}"></span>
-  <label class="chk"><input type="checkbox" id="maff" ${F.afford?'checked':''}> I can afford</label>
+  ${LG?'':`<label class="chk"><input type="checkbox" id="maff" ${F.afford?'checked':''}> I can afford</label>`}
   <div class="pospills" role="group" aria-label="Positions (choose any)"><button data-mpos="ALL" class="${F.pos.length?'':'on'}" aria-pressed="${!F.pos.length}">All</button>${['GK','LB','CB','RB','LWB','RWB','CM','AM','LM','RM','LW','RW','CF'].map(p=>`<button data-mpos="${p}" class="${F.pos.includes(p)?'on':''}" aria-pressed="${F.pos.includes(p)}">${p}</button>`).join('')}</div>
   <button class="btn sm ghost" id="mreset">Reset filters</button>
  </div>
  <div class="mhead"><span class="eyebrow">${total} players match</span><span class="note">Your wallet <b class="num">${fmt(me.budget)}</b> · Squad ${me.squad.length}/25</span></div>
  <div class="tblwrap mtable"><table><thead><tr>${th('ovr','Rating','ovrcol')}${th('name','Player')}${th('pos','Pos')}${th('age','Age','n')}${th('trait','Trait')}${th('spd','SPD','n')}${th('sho','SHO','n')}${th('pas','PAS','n')}${th('dri','DRI','n')}${th('tck','TCK','n')}${th('str','STR','n')}${th('gk','GK','n')}${th('sta','STA','n')}${th('club','Club')}${th('price','Price','n')}<th></th></tr></thead><tbody>
- ${shown.map(e=>{const p=e.p;const pr=priceOf(e);const c=e.club<0?null:T[e.club];const att=k=>`<td class="n" style="color:${tier(p[k]).bg==='#7a1414'?'#e07070':tier(p[k]).bg}">${p[k]}</td>`;
+ ${shown.map(e=>{const p=e.p;const pr=priceOf_(e);const c=e.et||(e.club<0?null:T[e.club]);const att=k=>`<td class="n" style="color:${tier(p[k]).bg==='#7a1414'?'#e07070':tier(p[k]).bg}">${p[k]}</td>`;
   return `<tr><td class="ovrcol">${chip(p.ovr,'lg')}</td><td><button class="linkbtn" data-card="${p.id}">${esc(PHONE()?shortName(p.name):p.name)}</button>${retireNote(p)}</td><td><span class="pos ${CAT[p.pos]}">${p.pos}</span></td><td class="n">${p.age}</td><td class="trcol">${traitTag(p)||'<span class="note">–</span>'}</td>${['spd','sho','pas','dri','tck','str','gk','sta'].map(att).join('')}
-  <td>${c?`<span class="clubcell">${badge(c,20)}<span>${esc(PHONE()?c.short:c.name)}<small>${LEAGUES[c.league].short}</small></span></span>`:'<span class="note">Free agent</span>'}</td><td class="n">${fmt(pr)}</td><td><button class="btn sm ${pr<=me.budget?'primary':''}" data-buy="${p.id}" ${pr>me.budget?'disabled':''}>Sign</button></td></tr>`;}).join('')}
+  <td>${c?`<span class="clubcell">${badge(c,20)}<span>${esc(PHONE()?c.short:c.name)}<small>${e.et?'EMP':LEAGUES[c.league].short}</small></span></span>`:'<span class="note">Free agent</span>'}</td><td class="n">${LG?'Free':fmt(pr)}</td><td><button class="btn sm ${pr<=me.budget?'primary':''}" data-buy="${p.id}" ${pr>me.budget?'disabled':''}>Sign</button></td></tr>`;}).join('')}
  </tbody></table></div>
  ${total>shown.length?`<div style="text-align:center;margin-top:12px"><button class="btn" id="mmore">Show more (${total-shown.length} left)</button></div>`:''}
- <p class="note">Free agents cost half their value. Players at other clubs cost 30% over value.</p>`;
+ <p class="note">${LG?'Your reward for winning the Emperor\'s Cup: sign any one player from the teams in the competition, free.':'Free agents cost half their value. Players at other clubs cost 30% over value.'}</p>`;
  const re=()=>{UI.m.limit=60;renderMarket();};
  const q=$('#mq');q.oninput=()=>{F.q=q.value;const pos=q.selectionStart;re();const n=$('#mq');n.focus();n.setSelectionRange(pos,pos);};
  $('#mclub').onchange=e=>{F.club=e.target.value;re();};
- $('#mlg').onchange=e=>{F.lg=e.target.value;re();};
- $('#mprice').onchange=e=>{F.price=e.target.value;re();};
- $('#maff').onchange=e=>{F.afford=e.target.checked;re();};
+ if($('#mlg'))$('#mlg').onchange=e=>{F.lg=e.target.value;re();};
+ if($('#mprice'))$('#mprice').onchange=e=>{F.price=e.target.value;re();};
+ if($('#maff'))$('#maff').onchange=e=>{F.afford=e.target.checked;re();};
  for(const [id,k] of [['mamin','amin'],['mamax','amax'],['momin','omin']]){const i=$('#'+id);i.onchange=()=>{F[k]=i.value;re();};}
  $('#mreset').onclick=()=>{Object.assign(F,{q:'',club:'ALL',lg:'ALL',pos:[],amin:'',amax:'',omin:'',price:'ANY',afford:false});re();};
  body.querySelectorAll('[data-mpos]').forEach(b=>b.onclick=()=>{const k=b.dataset.mpos;if(k==='ALL')F.pos=[];else F.pos=F.pos.includes(k)?F.pos.filter(x=>x!==k):[...F.pos,k];re();});
  body.querySelectorAll('[data-msort]').forEach(b=>b.onclick=()=>{const k=b.dataset.msort;if(F.sort===k)F.dir*=-1;else{F.sort=k;F.dir=['name','club','pos','price','age'].includes(k)?1:-1;}renderMarket();});
- body.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{if(buy(+b.dataset.buy))renderMarket();});
+ body.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{if(LG){signEmperorLegend(b.dataset.buy);toast(`${S.cup.legend} has joined your squad`);const pc=$('#pclose');if(pc)pc.click();return;}if(buy(+b.dataset.buy))renderMarket();});
+ if(LG)body.querySelectorAll('[data-card]').forEach(b=>{b.replaceWith(Object.assign(document.createElement('span'),{textContent:b.textContent}));});
  body.querySelectorAll('[data-card]').forEach(b=>b.onclick=()=>openCard(+b.dataset.card,b));
  const mm=$('#mmore');if(mm)mm.onclick=()=>{F.limit+=60;renderMarket();};
 }
@@ -4112,7 +4118,8 @@ function startMatch(H,A,ctx){
  {const sb=$('#sndbtn');if(sb){sb.onclick=()=>{sndToggle();sb.textContent=SND.on?'Sound on':'Sound off';};}}
  $('#pause').onclick=()=>{const ov=document.querySelector('.subover');if(ov&&LIVE.paused){ov.remove();UI.subOut=null;LIVE.paused=false;sndPause(false);$('#pause').textContent='Pause';return;}LIVE.paused=!LIVE.paused;sndPause(LIVE.paused);$('#pause').textContent=LIVE.paused?'Resume':'Pause';};
  app.querySelectorAll('[data-spd]').forEach(b=>b.onclick=()=>{LIVE.speed=+b.dataset.spd;app.querySelectorAll('[data-spd]').forEach(x=>x.classList.toggle('on',x===b));});
- wireCycler(app,'live',k=>{myTeam().tactic=k;save();const tm=LIVE.m.teams[LIVE.mine];tm.tac=TACTICS[k];tm.ment=tm.tac.ment||0;tm.side.tactic=k;ev(LIVE.m,'tac',`Game plan changed to ${TACTICS[k].name}`,LIVE.mine);});
+ // a new game plan only takes effect once it has been left alone for three seconds
+ wireCycler(app,'live',k=>{myTeam().tactic=k;save();clearTimeout(UI.tacT);const L0=LIVE;UI.tacT=setTimeout(()=>{if(!LIVE||LIVE!==L0)return;const tm=LIVE.m.teams[LIVE.mine];const cur=myTeam().tactic;if(tm.side.tactic===cur)return;tm.tac=TACTICS[cur];tm.ment=tm.tac.ment||0;tm.side.tactic=cur;ev(LIVE.m,'tac',`Game plan changed to ${TACTICS[cur].name}`,LIVE.mine);},3000);});
  $('#ballsel').onchange=e=>{S.ball=e.target.value;save();};
  $('#subsbtn').onclick=()=>openSubs();
  const bb=$('#boostbtn');if(bb)bb.onclick=()=>openBoosters();
@@ -5039,7 +5046,7 @@ function wireCupBtns(el,c,mf){
  const rp=c.replay;const back=()=>{if(rp){S.cup=null;save();renderHub();}else nextSeason();};
  const et=$('#eternal');if(et)et.onclick=()=>cupPreview('mystery',()=>{createCup('mystery');if(rp)S.cup.replay=true;save();renderHub();},back);const ge=$('#goelite');if(ge)ge.onclick=()=>{createCup('elite');if(rp)S.cup.replay=true;save();renderHub();};
  const gm=$('#goemp');if(gm)gm.onclick=()=>cupPreview('emperor',()=>{createCup('emperor');if(rp)S.cup.replay=true;save();renderHub();},back);
- const lg=$('#legendbtn');if(lg)lg.onclick=()=>{UI.legendMkt=true;renderHub();};
+ const lg=$('#legendbtn');if(lg)lg.onclick=()=>openMarket(true);
  el.querySelectorAll('[data-legsign]').forEach(b=>b.onclick=()=>{signEmperorLegend(b.dataset.legsign);UI.legendMkt=false;renderHub();});
  const lc=$('#legclose');if(lc)lc.onclick=()=>{UI.legendMkt=false;renderHub();};
  const rd=$('#retdom');if(rd)rd.onclick=()=>{UI.legendMkt=false;back();};
