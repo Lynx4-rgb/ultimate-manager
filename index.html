@@ -628,6 +628,50 @@ html,body{margin:0}
  .mtable .rchip.lg{min-width:30px;height:22px;font-size:13px}.mtable .clubcell small{display:none}.mtable .clubcell .badge,.mtable .clubcell .badge svg{width:16px!important;height:16px!important}
  .mtable th{font-size:10px}.mtable td{font-size:12px}.mtable .btn.sm{padding:3px 8px}
 }
+@media (orientation:landscape) and (max-height:500px){
+ /* matchday */
+ .mdph{display:grid;gap:10px}
+ .mdph .ph-top{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:10px;align-items:start}
+ .mdph .md-a>.panel{height:calc(100dvh - 62px);display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px}
+ .mdph .md-a .venuebar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}.mdph .md-a .venuebar .eyebrow{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+ .mdph .md-a .venuebar>:last-child{font-size:11px;flex:none;padding:2px 8px}.mdph .md-a .venuebar svg{width:14px;height:14px}
+ .mdph .md-a .bigfix{padding:2px 0}.mdph .md-a .bigfix h3{font-size:15px}.mdph .md-a .bigfix .badge,.mdph .md-a .bigfix .badge svg{width:40px!important;height:40px!important}
+ .mdph .md-a .venue{flex:1;min-height:40px;height:auto;max-height:120px}.mdph .md-a .actions{gap:6px;margin-top:6px}.mdph .md-a .actions .btn{padding:6px 10px}
+ .mdph .md-a .note{font-size:10px}.mdph .md-a p.note{margin-top:4px!important}
+ .mdph .notes{height:calc(100dvh - 62px);overflow:hidden;display:flex;flex-direction:column;padding:8px 10px}.mdph .notes .ntree{flex:1}
+ .mdph .notes .nh{font-size:13px!important;white-space:normal}.mdph .notes .nitem.lead .nh{font-size:15px!important}.mdph .notes .nd{font-size:11px!important}.mdph .notes #morenotes{align-self:flex-start;margin-top:auto}
+ .mdph .ph-mid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px;align-items:stretch}
+ .mdph .ph-side{display:flex;flex-direction:column;gap:10px;min-width:0}.mdph .ph-side>section:last-child{flex:1}
+ .mdph .ph-bot{display:flex;justify-content:center}.mdph .ph-bot>section{width:min(560px,100%)}
+ /* squad: portrait pitch, bench level with it, equal gaps */
+ #tabbody[data-t=squad] .squadpanel{grid-template-columns:auto 168px!important;column-gap:14px!important}
+ #tabbody[data-t=squad] .squadfield{display:flex!important;gap:14px!important;align-items:stretch}
+ #tabbody[data-t=squad] .bigpitch{height:calc(100dvh - 82px)!important;width:auto!important;aspect-ratio:68/88;flex:none;margin:0}
+ #tabbody[data-t=squad] .bench{max-height:none!important;display:flex;flex-direction:column;justify-content:flex-start}
+ /* market: the table fills the width, Sign finishing at the right edge */
+ .mtable table{width:100%}.mtable .trcol{max-width:none;width:118px}.mtable .trcol>*{max-width:118px}
+ /* league rows a touch shorter */
+ #tabbody[data-t=league] td,#tabbody[data-t=league] th{padding-top:4px!important;padding-bottom:4px!important}
+ /* full time on a phone */
+ body.noscroll{overflow:hidden;height:100dvh}
+ .ftphone{place-items:stretch;padding:6px!important}
+ .ftph{display:grid;grid-template-columns:1fr 1px 1.35fr;gap:14px;background:#151b1c;border:1px solid var(--line);border-radius:12px;padding:10px 14px;height:100%;box-sizing:border-box}
+ .ftph::before{content:'';grid-column:2;grid-row:1;background:rgba(255,255,255,.18)}
+ .ftleft{grid-column:1;grid-row:1;display:grid;align-content:center;justify-items:center;gap:6px;text-align:center}
+ .ftleft h2{font-size:24px!important;margin:0}.ftteams{display:flex;align-items:center;gap:12px;font-family:var(--display);font-weight:800;font-size:18px}.ftteams b{font-size:38px}
+ .ftleft .ftsc{font-size:11px}.ftleft .btn{margin-top:4px;padding:8px 22px}
+ .ftright{grid-column:3;grid-row:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+ .ftswipe{flex:1;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}.ftswipe::-webkit-scrollbar{display:none}
+ .ftpage{flex:0 0 100%;scroll-snap-align:start;min-width:0}.ftpage h4{margin:0 0 4px;font-size:14px}.ftpage h4 small{font-size:10px;color:var(--muted);font-weight:500}
+ .ft2col{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ft2col .rlist li{padding:3px 0;gap:6px;font-size:12px}.ft2col .rlist .pos{font-size:9px;min-width:30px}
+ .motmstar{color:#f2c94c;font-style:normal}.ft2col .rlist .rn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .ftdots{display:flex;justify-content:center;gap:6px;padding-top:4px}.ftdots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25)}.ftdots i.on{background:var(--amber)}
+}
+@media (orientation:landscape) and (max-height:500px){
+ .ftpage{display:flex;flex-direction:column;justify-content:center}
+ .ft2col .rlist .rn{display:block!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .motmtag{font-style:normal;font-size:8px;font-weight:800;letter-spacing:.05em;color:#111;background:#e3b341;border-radius:3px;padding:1px 3px;vertical-align:middle}
+}
 </style>
 </head>
 <body>
@@ -2658,9 +2702,9 @@ function notesHTML(){
  ingestNews();const N=S.notes||[];
  if(!N.length)return `<section class="panel notes"><div class="nhead"><span class="eyebrow">Club wire</span><span class="live">● On air</span></div><p class="note" style="margin:6px 0 0">No news yet. Play a match and the wire will start ticking.</p></section>`;
  const item=(n,i)=>`<li class="nitem ${i===0?'lead':''}" style="--nc:${NOTE_COL[n.k]||'#9fb0b5'}"><span class="nk">${esc(n.k)}</span><span class="nt">S${n.s} · R${n.r+1}</span><b class="nh">${esc(n.h)}</b>${n.d?`<span class="nd">${esc(n.d)}</span>`:''}</li>`;
- const top=N.slice(0,3),rest=N.slice(3);
+ const nTop=PHONE()?2:3;const top=N.slice(0,nTop),rest=N.slice(nTop);
  return `<section class="panel notes"><div class="nhead"><span class="eyebrow">Club wire</span><span class="live">● On air</span></div>
- <ol class="ntree">${top.map(item).join('')}${UI.allNotes?rest.map((n,i)=>item(n,i+3)).join(''):''}</ol>
+ <ol class="ntree">${top.map(item).join('')}${UI.allNotes?rest.map((n,i)=>item(n,i+nTop)).join(''):''}</ol>
  ${rest.length?`<button class="btn sm ghost" id="morenotes">${UI.allNotes?'Show fewer':`Older news (${rest.length})`}</button>`:''}</section>`;
 }
 function finishRound(userRes){
@@ -2879,6 +2923,13 @@ function tabMatch(el){
  }
  const lastRd=S.last!=null?S.fx[l][S.last]:null;
  const others=rd.filter(f=>f.h!==S.me&&f.a!==S.me).map(f=>fixRow(f,false)).join('')||'<p class="note">No other matches.</p>';
+ const resultsHTML=lastRd?`<section class="panel phres"><span class="eyebrow">Round ${S.last+1} results</span><div class="list">${lastRd.map(f=>fixRow(f,true)+(f.sc&&f.sc.length?`<div class="note" style="padding:0 0 8px;text-align:center">${f.sc.map(s=>esc(surname(s.n))+' '+s.m+'′').join(', ')}</div>`:'')).join('')}</div></section>`:`<section class="panel phres"><span class="eyebrow">Results</span><p class="note" style="margin:6px 0 0">Results from each round will appear here.</p></section>`;
+ const nextHTML=`<section class="panel phnext"><span class="eyebrow">Next up · round ${S.round+1} fixtures</span><div class="list">${others}</div></section>`;
+ if(PHONE()){
+  el.innerHTML=`<div class="mdph"><div class="ph-top"><div class="md-a">${main}</div>${news}</div>
+  <div class="ph-mid"><section class="panel phtable">${leagueTableHTML(l,table(l),true)}</section><div class="ph-side">${offs}${resultsHTML}${offs?'':nextHTML}</div></div>
+  ${offs?`<div class="ph-bot">${nextHTML}</div>`:''}</div>`;
+ }else
  el.innerHTML=`<div class="mdgrid"><div class="mdcol"><div class="md-a">${main}</div>
   <div class="md-c"><section class="panel">${leagueTableHTML(l,table(l),true)}</section></div></div>
   <div class="mdcol"><div class="md-b stack">${news}${offs}</div><div class="md-d">${lastRd?`<section class="panel"><span class="eyebrow">Round ${S.last+1} results</span><div class="list">${lastRd.map(f=>fixRow(f,true)+(f.sc&&f.sc.length?`<div class="note" style="padding:0 0 8px;text-align:center">${f.sc.map(s=>esc(surname(s.n))+' '+s.m+'′').join(', ')}</div>`:'')).join('')}</div></section>`:`<section class="panel"><span class="eyebrow">Results</span><p class="note" style="margin:6px 0 0">Results from each round will appear here.</p></section>`}<section class="panel" style="margin-top:16px"><span class="eyebrow">Next up · round ${S.round+1} fixtures</span><div class="list">${others}</div></section></div></div></div>`;
@@ -2936,7 +2987,7 @@ function tabSquad(el){
  const me=myTeam();fixXI(me);const f=FORMATIONS[me.formation];const xi=xiPlayers(me);
  const xiSet=new Set(me.xi);
  const bench=me.squad.filter(p=>!xiSet.has(p.id)).sort((a,b)=>POSITIONS.indexOf(a.pos)-POSITIONS.indexOf(b.pos)||b.ovr-a.ovr);
- const hz=PHONE();
+ const hz=false;
  const spots=f.map((s,i)=>{const p=xi[i];const cat=CAT[s[0]];const top=93-(s[1]/0.66)*82-(cat==='CM'||cat==='WM'?7:cat==='FB'&&s[0].length===3?4:0);return `<div class="spot" style="${hz?`left:${100-top}%;top:${s[2]*100}%`:`left:${s[2]*100}%;top:${top}%`}">${p&&!posOK(p,s[0])?`<span class="slotlbl" title="Playing out of position">${s[0]}</span>`:''}${p?tileHTML(p,{slot:i,role:s[0]}):''}</div>`;}).join('');
  const tac=TACTICS[me.tactic];
  el.innerHTML=`<section class="panel squadpanel">
@@ -2945,7 +2996,7 @@ function tabSquad(el){
  ${tacCycler(me.tactic,"sq")}
  <p class="note tacdesc">${esc(tac.desc)}</p>${(()=>{const n=tacRun();return n===0?`<p class="tacfam new">New set-up: opponents won't have seen this coming.</p>`:n<=8?`<p class="tacfam">Settled: ${n} game${n>1?'s':''} in a row with this formation and play style.</p>`:`<p class="tacfam stale">Rivals are reading this set-up (${n} games in a row). A change of formation or play style could catch them out.</p>`;})()}
  ${UI.swap?`<div class="swapbar">Choose a player to swap with <b>${esc(playerById(UI.swap)?.name||'')}</b> <button class="btn sm ghost" id="cancelswap">Cancel</button></div>`:''}
- <div class="squadfield"><aside class="bench" aria-label="Substitutes bench"><span class="eyebrow">Bench</span>${bench.length?`<div class="benchgrid" style="grid-template-rows:repeat(${Math.min(5,bench.length)},auto)">${bench.map(p=>tileHTML(p,{})).join('')}</div>`:'<span class="note">Empty</span>'}</aside>
+ <div class="squadfield"><aside class="bench" aria-label="Substitutes bench"><span class="eyebrow">Bench</span>${bench.length?`<div class="benchgrid" style="grid-template-rows:repeat(${Math.min(PHONE()?4:5,bench.length)},auto)">${bench.map(p=>tileHTML(p,{})).join('')}</div>`:'<span class="note">Empty</span>'}</aside>
  <div class="bigpitch ${hz?'horiz':''}"><div class="box t"></div><div class="box b"></div><div class="six t"></div><div class="six b"></div><div class="mid"></div><div class="circ"></div>${spots}</div></div>
  <div class="legend">${TIERS.map((t,i)=>`<span><i style="background:${t[1]}"></i>${i===0?'≤39':i===6?'90+':(TIERS[i-1][0]+1)+'–'+t[0]}</span>`).join('')}<span><i class="g"></i>75+ gold ring</span></div>
  <p class="note" style="margin:6px 0 0">Tap a tile for the player card. Drag one tile onto another, or use Swap on the card, to change the line-up.</p></section>`;
@@ -3236,10 +3287,10 @@ function sizeCanvas(){
  const pw=$('#pw');if(!pw||!LIVE)return;const cv=$('#cv');let w=pw.parentElement.clientWidth;const port=w<620;
  MX=13;
  const AW=pw.parentElement.clientWidth||window.innerWidth;
- if(PHONE()){const s1=window.innerHeight/(PW+2*4.5);MX=Math.max(13,(AW/s1-PL)/2);}
+ if(PHONE()){const s1=window.innerHeight/(PW+2*MY);MX=Math.max(13,(AW/s1-PL)/2);}
  const TW=PL+2*MX,TH=PW+2*MY;
  pw.style.height='';cv.style.marginTop='';
- if(PHONE()){const vis=PW+2*4.5;const H=window.innerHeight;let s0=H/vis;s0=Math.min(s0,AW/TW);w=TW*s0;
+ if(PHONE()){const vis=PW+2*MY;const H=window.innerHeight;let s0=H/vis;s0=Math.min(s0,AW/TW);w=TW*s0;
   const h0=TH*s0;pw.style.height=Math.min(H,h0)+'px';cv.style.marginTop=(-Math.max(0,(h0-H)/2))+'px';}
  else if(!port)w=Math.min(w,Math.max(560,(window.innerHeight-150))*TW/TH);
  const h=port?w*TW/TH:w*TH/TW;const dpr=Math.min(2,window.devicePixelRatio||1);
@@ -3325,6 +3376,7 @@ function openSubs(){
 // ---------- sub suggestions ----------
 // every couple of seconds look for a tired player with a fresher like-for-like player on the bench
 function subTip(L,m){
+ if(m.finished)return;
  if(document.querySelector('.subtip')||m.t<(L.tipNext||0))return;L.tipNext=m.t+2;
  if(((m.subs||[0,0])[L.mine])>=MAXSUB)return;
  const T=m.teams[L.mine];const bench=T.side.bench||[];L.tipNo=L.tipNo||{};
@@ -3366,6 +3418,23 @@ function showFT(){
  const L=LIVE;const m=L.m;const mine=L.mine;let gf=m.score[mine],ga=m.score[1-mine];
  let penTxt='';if(L.ko&&gf===ga){const pn=penalties(L.H,L.A);m.pens=pn;const pm=pn[mine],po=pn[1-mine];penTxt=`<div class="note"><b>${pm>po?esc(myTeam().name)+' win':esc((mine?L.H:L.A).name)+' win'} ${Math.max(pm,po)}–${Math.min(pm,po)} on penalties</b></div>`;gf+=pm>po?0.1:0;ga+=po>pm?0.1:0;}
  const div=document.createElement('div');div.className='ftover htover';
+ if(PHONE()){const scs=t=>m.scorers.filter(s=>s.team===t).map(s=>esc(surname(s.name))+' '+s.min+'′').join(', ')||'—';
+  const rs=matchRatings(m);const motm=rs.slice().sort((a,b)=>b.r-a.r||b.pl.st.g-a.pl.st.g)[0];const sides=[m.teams[0].side,m.teams[1].side];
+  const chipR=r=>{const t=tier(Math.round(r*10));return `<span class="rchip sm" style="background:${t.bg};color:${t.fg}">${r.toFixed(1)}</span>`;};
+  const row=x=>`<li><span class="pos ${x.pl.role}">${x.pl.slot}</span><span class="rn">${esc(surname(x.pl.p.name))}${(x.pl.cap||sides[x.pl.team].captain===x.pl.p.id)?' <i class="motmstar">★</i>':''}${x===motm?' <i class="motmtag">MOTM</i>':''}</span>${chipR(x.r)}</li>`;
+  const page=t=>{const list=rs.filter(x=>x.pl.team===t);const h=Math.ceil(list.length/2);return `<div class="ftpage"><h4>${esc(sides[t].name)}${t===mine?'':' <small>(swipe back for yours)</small>'}</h4><div class="ft2col"><ul class="rlist">${list.slice(0,h).map(row).join('')}</ul><ul class="rlist">${list.slice(h).map(row).join('')}</ul></div></div>`;};
+  div.classList.add('ftphone');
+  div.innerHTML=`<div class="ftph"><div class="ftleft"><span class="eyebrow">Full-time</span><h2 style="color:${gf>ga?'var(--good)':gf<ga?'var(--bad)':'var(--mid)'}">${gf>ga?'Victory':gf<ga?'Defeat':'Draw'}</h2>
+   <div class="ftteams"><span>${esc(L.H.short)}</span><b class="num">${m.score[0]} – ${m.score[1]}</b><span>${esc(L.A.short)}</span></div>${penTxt}
+   <div class="note ftsc">${esc(L.H.short)}: ${scs(0)}<br>${esc(L.A.short)}: ${scs(1)}</div>
+   <div class="note">Man of the match: <b>${esc(motm.pl.p.name)}</b> ${chipR(motm.r)}</div>
+   <button class="btn primary" id="cont">Continue</button></div>
+   <div class="ftright"><div class="ftswipe">${page(mine)}${page(1-mine)}</div><div class="ftdots"><i class="on"></i><i></i></div></div></div>`;
+  document.querySelectorAll('.subtip').forEach(x=>x.remove());{const bd=document.querySelector('.match>.board');if(bd)bd.style.display='none';}
+  $('#pw').appendChild(div);window.scrollTo(0,0);document.body.classList.add('noscroll');
+  const sw=div.querySelector('.ftswipe');sw.onscroll=()=>{const i=Math.round(sw.scrollLeft/sw.clientWidth);div.querySelectorAll('.ftdots i').forEach((d,k)=>d.classList.toggle('on',k===i));};
+  $('#cont').onclick=()=>{document.body.classList.remove('noscroll');cancelAnimationFrame(L.raf);sndStop();LIVE=null;L.onDone(m);window.scrollTo(0,0);};
+  return;}
  const sc=t=>m.scorers.filter(s=>s.team===t).map(s=>esc(surname(s.name))+' '+s.min+'′').join(', ')||'—';
  div.innerHTML=`<div class="ftcard"><span class="eyebrow">Full-time</span><h2 style="color:${gf>ga?'var(--good)':gf<ga?'var(--bad)':'var(--mid)'}">${gf>ga?'Victory':gf<ga?'Defeat':'Draw'}</h2>
  <div class="res num">${m.score[0]} – ${m.score[1]}</div>${penTxt}<div class="note">${esc(L.H.short)}: ${sc(0)}<br>${esc(L.A.short)}: ${sc(1)}</div><button class="btn primary" id="cont">Continue</button>${ratingsHTML(m)}<button class="btn primary" id="cont2">Continue</button></div>`;div.querySelector('.ftcard').classList.add('htcard');
