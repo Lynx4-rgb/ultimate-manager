@@ -1,12 +1,10 @@
-# Ultimate Manager
+# Ultimate Manager (web app)
 
-Upload every file in this folder to the root of a GitHub repository and turn on GitHub Pages
-(Settings > Pages > Deploy from a branch > main / root).
+Upload every file in this folder to the root of the GitHub Pages repository, replacing the old ones.
 
-When you upload a new version of index.html, also change VERSION at the top of sw.js
-(for example ultimate-manager-v2) so phones fetch the update.
-
-
-Cloud sync: when the game runs from GitHub Pages it keeps each career in the Supabase project
-https://qhmtfcnzhmvpafkwivgm.supabase.co (table public.cloud_saves; run supabase-setup.sql once).
-Sign in on another device with the same name and password to carry on there.
+## Installing on Android (Chrome)
+1. Remove any old Ultimate Manager icon from the home screen.
+2. Open the site in Chrome (not the Google app or another browser).
+3. Tap the gold **Install app** button at the bottom-left, or Chrome menu ⋮ → **Install app**.
+   Do not use "Add to home screen" - that only makes a shortcut with a small Chrome badge.
+4. The app appears in your app drawer and on the home screen, with no badge.

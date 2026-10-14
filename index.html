@@ -15,6 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
 <title>Ultimate Manager</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -811,6 +812,7 @@ html,body{margin:0}
 .tcard .t3 .ts{gap:4px;min-width:0}.tcard .t3 .ts span{font-size:10px;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tcard .t3 .ts b{font-size:17px;white-space:nowrap}
 .tcard .tvalue{display:flex;justify-content:center;align-items:baseline;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(0,0,0,.1);text-align:center}
 .tcard .tvalue span{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.65}.tcard .tvalue b{font-size:18px}
+.installpill{position:fixed;left:12px;bottom:12px;z-index:60;padding:8px 14px;border-radius:999px;border:1px solid #e3b341;background:#1b1b1b;color:#f2d07a;font:700 13px 'Barlow',system-ui,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.45);cursor:pointer}
 </style>
 </head>
 <body>
@@ -3400,6 +3402,14 @@ function sideOf(t,other,isAway){
 // game plans run from most passive (left) to most aggressive (right); the arrows wrap round
 function tacCycler(k,id){const ks=Object.keys(TACTICS);const i=Math.max(0,ks.indexOf(k));return `<div class="taccyc" data-cyc="${id}"><button class="btn sm cycbtn" data-dir="-1" aria-label="More passive">◀</button><span class="cycname"><b>${TACTICS[ks[i]].name}</b><small>${i+1} / ${ks.length}</small></span><button class="btn sm cycbtn" data-dir="1" aria-label="More aggressive">▶</button></div>`;}
 function wireCycler(root,id,set){const box=root.querySelector(`[data-cyc="${id}"]`);if(!box)return;box.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{const ks=Object.keys(TACTICS);const cur=ks.indexOf(myTeam().tactic);const n=ks[((cur<0?3:cur)+(+b.dataset.dir)+ks.length)%ks.length];set(n);const nm=box.querySelector('.cycname');if(nm&&box.isConnected){const i=ks.indexOf(n);nm.innerHTML=`<b>${TACTICS[n].name}</b><small>${i+1} / ${ks.length}</small>`;}});}
+// ---------- proper app install (Chrome's own install, so it goes in the app drawer with no Chrome badge) ----------
+let INSTALL_EVT=null;
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();INSTALL_EVT=e;showInstallPill();});
+addEventListener('appinstalled',()=>{INSTALL_EVT=null;document.querySelectorAll('.installpill').forEach(x=>x.remove());toast('Installed. Open Ultimate Manager from your apps.');});
+async function doInstall(){if(!INSTALL_EVT){toast('Use the Chrome menu (⋮) and choose "Install app".');return;}INSTALL_EVT.prompt();try{await INSTALL_EVT.userChoice;}catch(e){}INSTALL_EVT=null;document.querySelectorAll('.installpill').forEach(x=>x.remove());}
+function showInstallPill(){if(isStandalone()||!INSTALL_EVT||typeof LIVE!=='undefined'&&LIVE)return;if(document.querySelector('.installpill'))return;const b=document.createElement('button');b.className='installpill';b.textContent='Install app';b.onclick=doInstall;document.body.appendChild(b);}
+function installPanel(){if(isStandalone())return '';return `<div class="cloudrow"><span class="eyebrow">Install</span><p class="note" style="margin:0">Install Ultimate Manager as a real app: it goes in your app drawer and on your home screen, opens full screen and has no Chrome badge.</p><button class="btn sm" id="instbtn">${INSTALL_EVT?'Install app':'How to install'}</button></div>`;}
 function fsPanel(){if(!(window.umFullscreenAvailable&&umFullscreenAvailable()))return '';let on=true;try{on=localStorage.getItem('um-fs')!=='0';}catch(e){}return `<div class="cloudrow"><span class="eyebrow">Full screen</span><label class="chk"><input type="checkbox" id="fsopt" ${on?'checked':''}> Hide the address bar and notifications while playing (first tap goes full screen)</label></div>`;}
 function cloudPanel(){return `<div class="cloudrow"><span class="eyebrow">Cloud sync</span>${USER.cloud?`<p class="note" style="margin:0"><span id="cloudstat">${cloudStatusText()}</span>. On another device, choose "Sign in with an account from another device" and use the same name and password.</p><button class="btn sm" id="csync">Sync now</button>`:`<p class="note" style="margin:0">Save your career to the cloud so you can play it on your phone and laptop. Type the password you chose for this player.</p><form id="clinkf" class="bdgrow"><input type="password" id="clpw" placeholder="This player's password" aria-label="This player's password"><button class="btn sm primary" type="submit">Turn on cloud sync</button></form>`}</div>`;}
 function wireCloudPanel(el){const cs=el.querySelector('#csync');if(cs)cs.onclick=async()=>{cs.textContent='Syncing…';await cloudPush(true);toast(CL.state==='ok'?'Synced':cloudWhy({why:'other',detail:CL.err}));renderHub();};
@@ -3757,7 +3767,7 @@ function upLg(l){return l-1;}
 function downLg(l){return l+1;}
 function theLg(l){return (l<=1||l===4?'the ':'')+LEAGUES[l].name;}
 function ord(n){return n+(['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');}
-function renderHub(){
+function renderHub(){setTimeout(()=>{if(typeof showInstallPill==="function")showInstallPill();},0);
  const me=myTeam();const tb=table(myLg());const pos=tb.findIndex(r=>r.i===S.me)+1;const n=S.fx[myLg()].length;UI.wasPhone=PHONE();
  app.innerHTML=`<div class="wrap">
  <header class="hubhead">${badge(me,56)}<div class="grow"><span class="eyebrow">${LEAGUES[myLg()].name} · Season ${S.season} · ${S.cup?cupName():S.done?'Season complete':'Round '+(S.round+1)+' of '+n}</span><h1>${esc(me.name)}</h1></div>
@@ -4038,7 +4048,7 @@ function tabSettings(el){
  const me=myTeam();
  if(!UI.bd||UI.bdFor!==me.id){const i=BADGE_IDS.indexOf(me.id);UI.bd=Object.assign({shape:i%4,pat:Math.floor(i/4)%8,c1:me.c1,c2:me.c2,star:false},me.badge||{});UI.bdFor=me.id;}
  const DESIGNS=[0,1,2,3].flatMap(sh=>[0,2,4,6].map((pt,j)=>[sh,(pt+sh)%8]));
- el.innerHTML=`<div class="setgrid">${USER?`<section class="panel ppanel"><span class="eyebrow">Your profile</span><div class="setbody"><div class="prow">${userPic(USER,84)}<div><b class="pname">${esc(USER.name)}</b><div class="bdgrow" style="margin-top:8px"><label class="btn sm" for="upimg" style="cursor:pointer">${USER.img?'Change profile picture':'Add a profile picture'}</label><input type="file" id="upimg" accept="image/*" hidden>${USER.img?'<button class="btn sm ghost" id="upimgx">Remove picture</button>':''}</div></div></div>${CLOUD_ON?cloudPanel():''}${fsPanel()}</div></section>`:''}
+ el.innerHTML=`<div class="setgrid">${USER?`<section class="panel ppanel"><span class="eyebrow">Your profile</span><div class="setbody"><div class="prow">${userPic(USER,84)}<div><b class="pname">${esc(USER.name)}</b><div class="bdgrow" style="margin-top:8px"><label class="btn sm" for="upimg" style="cursor:pointer">${USER.img?'Change profile picture':'Add a profile picture'}</label><input type="file" id="upimg" accept="image/*" hidden>${USER.img?'<button class="btn sm ghost" id="upimgx">Remove picture</button>':''}</div></div></div>${CLOUD_ON?cloudPanel():''}${fsPanel()}${installPanel()}</div></section>`:''}
  <section class="panel ballpanel"><span class="eyebrow">Match ball</span><div class="setbody"><div class="balls">${ownedBalls().map(k=>[k,BALLS[k]]).map(([k,v])=>`<button class="ballopt ${(curBall())===k?'on':''}" data-ball="${k}"><canvas width="96" height="96" data-bp="${k}" aria-hidden="true"></canvas><span>${v}</span></button>`).join('')}</div><p class="note" style="margin:0">You can also change the ball during a match. Each promotion wins a new ball (${ownedBalls().length} of ${Object.keys(BALLS).length} collected); they only change the look.</p></div></section>
  <div class="setrow2">
  <section class="panel clubsec"><span class="eyebrow">Your club</span><div class="setbody">
@@ -4056,6 +4066,7 @@ function tabSettings(el){
  el.querySelectorAll('[data-bdesign]').forEach(b=>b.onclick=()=>{const [sh,pt]=b.dataset.bdesign.split(',').map(Number);UI.bd.shape=sh;UI.bd.pat=pt;UI.bd.star=false;delete UI.bd.img;tabSettings(el);});
  for(const [id,k] of [['bc1','c1'],['bc2','c2']]){$('#'+id).oninput=e=>{UI.bd[k]=e.target.value;$('#bprev').innerHTML=badge({...me,badge:UI.bd},PHONE()?120:160);};$('#'+id).onchange=()=>tabSettings(el);}
  if(CLOUD_ON)wireCloudPanel(el);
+ {const ib=el.querySelector('#instbtn');if(ib)ib.onclick=doInstall;}
  {const fo=el.querySelector('#fsopt');if(fo)fo.onchange=()=>{try{localStorage.setItem('um-fs',fo.checked?'1':'0');}catch(e){}if(!fo.checked&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});};}
  const setPic=img=>{const all=getUsers();const u=all.find(x=>x.id===USER.id);if(!u)return;if(img)u.img=img;else delete u.img;setUsers(all);USER=u;cloudSoon();tabSettings(el);toast(img?'Profile picture saved':'Profile picture removed');};
  const upi=$('#upimg');if(upi)upi.onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{const im=new Image();im.onload=()=>{const cv=document.createElement('canvas');cv.width=cv.height=200;const c=cv.getContext('2d');const k=Math.max(200/im.width,200/im.height);const w=im.width*k,h=im.height*k;c.drawImage(im,(200-w)/2,(200-h)/2,w,h);setPic(cv.toDataURL('image/jpeg',0.85));};im.src=rd.result;};rd.readAsDataURL(f);};
@@ -4108,7 +4119,7 @@ function startLive(mf){
   const res={i:mf.i,hs:m.score[0],as:m.score[1],sc:m.scorers.map(s=>({team:s.team,p:s.pid?{id:s.pid,name:s.name}:null,min:s.min})),m};
   applyForm(m);finishRound(res);UI.tab='match';render();toast(`Match winnings: ${fmt(S.lastEarn||0)}`);}});
 }
-function startMatch(H,A,ctx){
+function startMatch(H,A,ctx){document.querySelectorAll(".installpill").forEach(x=>x.remove());
  fixXI(myTeam());
  const hs=sideOf(H,A,false),as=sideOf(A,H,true);
  const cnd=ctx.cond||{w:'clear',night:false};
